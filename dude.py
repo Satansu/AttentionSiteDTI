@@ -12,7 +12,7 @@ from rdkit.Chem.rdmolops import GetAdjacencyMatrix
 import networkx as nx
 from Bio.PDB import *
 import deepchem
-import pickle
+import pickle 
 
 pk = deepchem.dock.ConvexHullPocketFinder()
 
@@ -77,8 +77,8 @@ def process_protein(pdb_file):
 
         ami = am[np.array(idxs)[:, None], np.array(idxs)]
         H = get_atom_feature(binding_parts_atoms)
-        g = nx.convert_matrix.from_numpy_matrix(ami)
-        graph = dgl.DGLGraph(g)
+        g = nx.from_numpy_array(ami)
+        graph = dgl.from_networkx(g)
         graph.ndata['h'] = torch.Tensor(H)
         graph = dgl.add_self_loop(graph)
         constructed_graphs.append(graph)
@@ -99,9 +99,9 @@ def process_protein(pdb_file):
     return binding_parts, not_in_binding, constructed_graphs
 
 
-valid_keys = glob.glob('./all/*')
+valid_keys = glob.glob('all\*')
 print(valid_keys)
-valid_keys = [v.split('/')[-1] for v in valid_keys]
+valid_keys = [v.split('\\')[-1] for v in valid_keys]
 
 dude_gene = list(OrderedDict.fromkeys([v.split('_')[0] for v in valid_keys]))
 test_fold = "tryb1_2zebA_full mcr_2oaxE_full bace1_3h0bA_full cxcr4_3oduA_full thb_1q4xA_full andr_2hvcA_full rxra_3ozjA_full esr2_2fszA_full mmp13_2pjtC_full pparg_2i4zA_full esr1_3dt3B_full prgr_3kbaA_full hivpr_1mtbA_full reni_3g6zB_full fa10_2p16A_full dpp4_2i78A_full adrb2_3ny8A_full fa7_1wqvH_full ppara_2p54A_full thrb_1ypeH_full ada17_2fv5A_full ace_3bklA_full urok_1sqtA_full gcr_3bqdA_full drd3_3pblA_full aa2ar_3emlA_full lkha4_3ftxA_full try1_2zq1A_full ppard_2znpA_full cp2c9_1r9oA_full cp3a4_1w0fA_full casp3_1rhrB_full adrb1_2vt4A_full "
@@ -167,7 +167,7 @@ for key in train_keys:
         except:
             pass
 
-    for smile in random.sample(decoys_string_list, len(actives_string_list)):
+    for smile in random.Random(3).sample(decoys_string_list, len(actives_string_list)):
         try:
             g = smiles_to_bigraph(smile.split()[0], node_featurizer=node_featurizer)
             g = dgl.add_self_loop(g)
@@ -225,6 +225,7 @@ for key in test_keys:
         except:
             pass
 
+    np.random.seed(3)
     random_selector = np.random.randint(len(decoys_string_list) - len(actives_string_list))
 
     for smile in decoys_string_list:

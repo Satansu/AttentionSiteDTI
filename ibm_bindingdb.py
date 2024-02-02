@@ -81,8 +81,8 @@ def process_protein(pdb_file):
 
         ami = am[np.array(idxs)[:, None], np.array(idxs)]
         H = get_atom_feature(binding_parts_atoms)
-        g = nx.convert_matrix.from_numpy_matrix(ami)
-        graph = dgl.DGLGraph(g)
+        g = nx.from_numpy_array(ami)
+        graph = dgl.from_networkx(g)
         graph.ndata['h'] = torch.Tensor(H)
         graph = dgl.add_self_loop(graph)
         constructed_graphs.append(graph)

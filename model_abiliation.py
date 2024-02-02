@@ -1,5 +1,5 @@
 import random
-
+# global max and avg pooling
 from dgl.nn.pytorch.conv import GATConv, GraphConv, TAGConv, GINConv, APPNPConv
 from dgl.nn import TWIRLSConv
 from dgl.nn.pytorch.glob import MaxPooling, GlobalAttentionPooling
@@ -85,7 +85,7 @@ class DTIModelWithoutBatching(nn.Module):
         #    sequence.append(ligand_rep)
 
         sequence = torch.cat((ligand_rep, protein_rep), dim=0).view(1, -1, 31)
-        mask = torch.eye(140, dtype=torch.uint8).view(1, 140, 140).cuda()
+        mask = torch.eye(140, dtype=torch.uint8).view(1, 140, 140).cpu()
         mask[0, sequence.size()[1]:140, :] = 0
         mask[0, :, sequence.size()[1]:140] = 0
         mask[0, :, sequence.size()[1] - 1] = 1
@@ -94,8 +94,8 @@ class DTIModelWithoutBatching(nn.Module):
         sequence = F.pad(input=sequence, pad=(0, 0, 0, 140 - sequence.size()[1]), mode='constant', value=0)
         sequence = sequence.permute(1, 0, 2)
 
-        h_0 = Variable(torch.zeros(4, 1, 31).cuda())
-        c_0 = Variable(torch.zeros(4, 1, 31).cuda())
+        h_0 = Variable(torch.zeros(4, 1, 31).cpu())
+        c_0 = Variable(torch.zeros(4, 1, 31).cpu())
 
         output, _ = self.bilstm(sequence, (h_0, c_0))
 
@@ -175,7 +175,7 @@ class DTITAG(nn.Module):
         #    sequence.append(ligand_rep)
 
         sequence = torch.cat((ligand_rep, protein_rep), dim=0).view(1, -1, 31)
-        mask = torch.eye(140, dtype=torch.uint8).view(1, 140, 140).cuda()
+        mask = torch.eye(140, dtype=torch.uint8).view(1, 140, 140).cpu()
         mask[0, sequence.size()[1]:140, :] = 0
         mask[0, :, sequence.size()[1]:140] = 0
         mask[0, :, sequence.size()[1] - 1] = 1
@@ -184,8 +184,8 @@ class DTITAG(nn.Module):
         sequence = F.pad(input=sequence, pad=(0, 0, 0, 140 - sequence.size()[1]), mode='constant', value=0)
         sequence = sequence.permute(1, 0, 2)
 
-        h_0 = Variable(torch.zeros(2, 1, 31).cuda())
-        c_0 = Variable(torch.zeros(2, 1, 31).cuda())
+        h_0 = Variable(torch.zeros(2, 1, 31).cpu())
+        c_0 = Variable(torch.zeros(2, 1, 31).cpu())
 
         output, _ = self.bilstm(sequence, (h_0, c_0))
 

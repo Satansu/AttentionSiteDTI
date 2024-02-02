@@ -41,7 +41,7 @@ def atom_feature(atom):
                     one_of_k_encoding(atom.GetDegree(), [0, 1, 2, 3, 4, 5, 6, 7, 8]) +
                     one_of_k_encoding_unk(atom.GetTotalNumHs(), [0, 1, 2, 3, 4]) +
                     one_of_k_encoding_unk(atom.GetImplicitValence(), [0, 1, 2, 3, 4, 5]) +
-                    [atom.GetIsAromatic()])  # (10, 6, 5, 6, 1) --> total 28
+                    [atom.GetIsAromatic()])  # (10, 9, 5, 6, 1) --> total 31
 
 
 def get_atom_feature(m):
@@ -80,13 +80,20 @@ def process_protein(pdb_file):
                     not_in_binding.remove(idx)
 
         ami = am[np.array(idxs)[:, None], np.array(idxs)]
-        H = get_atom_feature(binding_parts_atoms)
-        g = nx.convert_matrix.from_numpy_matrix(ami)
-        graph = dgl.from_networkx(g)
-        graph.ndata['h'] = torch.Tensor(H)
-        graph = dgl.add_self_loop(graph)
-        constructed_graphs.append(graph)
-        binding_parts.append(binding_parts_atoms)
+        try:
+            H = get_atom_feature(binding_parts_atoms)
+            g = nx.from_numpy_array(ami)
+            graph = dgl.from_networkx(g)
+            graph.ndata['h'] = torch.Tensor(H)
+            graph = dgl.add_self_loop(graph)
+            constructed_graphs.append(graph)
+            binding_parts.append(binding_parts_atoms)
+        except Exception as e:
+            print(f"error4: {e}")
+            file = open("allowableset.txt", "a+")
+            file.write(f"{item}\n")
+            file.close()
+            return binding_parts, not_in_binding, constructed_graphs
 
     constructed_graphs = dgl.batch(constructed_graphs)
 
@@ -98,16 +105,16 @@ node_featurizer = CanonicalAtomFeaturizer(atom_data_field='h')
 zero = np.eye(2)[1]
 one = np.eye(2)[0]
 
-df = pd.read_csv("humanSeqPdb")
+df = pd.read_csv("humanSeqPdb.txt")
 print(len(df['pdb_id'].unique()))
 
-with open("human_data.txt", 'r') as fp:
+with open("accepted2.txt", 'r') as fp:
     train_raw = fp.read()
 save_set = []
 
 constructed_graphs = ""
 raw_data = train_raw.split("\n")
-random.shuffle(raw_data)
+random.Random(3).shuffle(raw_data)
 raw_data_train = raw_data[0: int(len(raw_data)*0.8)]
 raw_data_valid = raw_data[int(len(raw_data)*0.8): int(len(raw_data)*0.9)]
 raw_data_test = raw_data[int(len(raw_data)*0.9): int(len(raw_data))]
@@ -145,16 +152,35 @@ for item in raw_data_train:
 
             g = smiles_to_bigraph(smile, node_featurizer=node_featurizer)
             g = dgl.add_self_loop(g)
-            if a[2] == "1":
-                save_set.append(((constructed_graphs, g), one))
-            else:
-                save_set.append((((constructed_graphs, g), zero)))
-    except Exception as e:
-        print(e)
+    except WindowsError as e:
+        print(f"error3: {e}")
+        # file = open("winerror.txt", "a+")
+        # file.write(f"{item}\n")
+        # file.close()
         continue
+    except Exception as e:
+        if str(e) == "can only convert an array of size 1 to a Python scalar":
+            print(f"error2: {e}")
+            # file = open("scalar.txt", "a+")
+            # file.write(f"{item}\n")
+            # file.close()
+        elif str(e).startswith("Python"):
+            print(f"error1: {e}")
+            # file = open("adjacency.txt", "a+")
+            # file.write(f"{item}\n")
+            # file.close()
+        continue
+    else:
+        if a[2] == "1":
+            save_set.append(((constructed_graphs, g), one))
+        else:
+            save_set.append((((constructed_graphs, g), zero)))
+        print("No error!")
+        # file = open("accepted.txt", "a+")
+        # file.write(f"{item}\n")
+        # file.close()
 
-
-with open(f'human_part_train.pkl', 'wb') as f:
+with open(f'human_part_train.pkl', 'ab') as f:
     pickle.dump(save_set, f)
 
 save_set = []
@@ -189,15 +215,35 @@ for item in raw_data_test:
 
             g = smiles_to_bigraph(smile, node_featurizer=node_featurizer)
             g = dgl.add_self_loop(g)
-            if a[2] == "1":
-                save_set.append(((constructed_graphs, g), one))
-            else:
-                save_set.append((((constructed_graphs, g), zero)))
-    except Exception as e:
-        print(e)
+    except WindowsError as e:
+        print(f"error3: {e}")
+        # file = open("winerror.txt", "a+")
+        # file.write(f"{item}\n")
+        # file.close()
         continue
+    except Exception as e:
+        if str(e) == "can only convert an array of size 1 to a Python scalar":
+            print(f"error2: {e}")
+            # file = open("scalar.txt", "a+")
+            # file.write(f"{item}\n")
+            # file.close()
+        elif str(e).startswith("Python"):
+            print(f"error1: {e}")
+            # file = open("adjacency.txt", "a+")
+            # file.write(f"{item}\n")
+            # file.close()
+        continue
+    else:
+        if a[2] == "1":
+            save_set.append(((constructed_graphs, g), one))
+        else:
+            save_set.append((((constructed_graphs, g), zero)))
+        print("No error!")
+        # file = open("accepted.txt", "a+")
+        # file.write(f"{item}\n")
+        # file.close()
 
-with open(f'human_part_test.pkl', 'wb') as f:
+with open(f'human_part_test.pkl', 'ab') as f:
     pickle.dump(save_set, f)
 
 
@@ -232,13 +278,33 @@ for item in raw_data_valid:
 
             g = smiles_to_bigraph(smile, node_featurizer=node_featurizer)
             g = dgl.add_self_loop(g)
-            if a[2] == "1":
-                save_set.append(((constructed_graphs, g), one))
-            else:
-                save_set.append((((constructed_graphs, g), zero)))
-    except Exception as e:
-        print(e)
+    except WindowsError as e:
+        print(f"error3: {e}")
+        # file = open("winerror.txt", "a+")
+        # file.write(f"{item}\n")
+        # file.close()
         continue
+    except Exception as e:
+        if str(e) == "can only convert an array of size 1 to a Python scalar":
+            print(f"error2: {e}")
+            # file = open("scalar.txt", "a+")
+            # file.write(f"{item}\n")
+            # file.close()
+        elif str(e).startswith("Python"):
+            print(f"error1: {e}")
+            # file = open("adjacency.txt", "a+")
+            # file.write(f"{item}\n")
+            # file.close()
+        continue
+    else:
+        if a[2] == "1":
+            save_set.append(((constructed_graphs, g), one))
+        else:
+            save_set.append((((constructed_graphs, g), zero)))
+        print("No error!")
+        # file = open("accepted.txt", "a+")
+        # file.write(f"{item}\n")
+        # file.close()
 
-with open(f'human_part_val.pkl', 'wb') as f:
+with open(f'human_part_val.pkl', 'ab') as f:
     pickle.dump(save_set, f)

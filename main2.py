@@ -9,6 +9,7 @@ from model_abiliation import DTITAG
 from torch.optim.lr_scheduler import ExponentialLR
 from tqdm import tqdm
 from dgl import batch, unbatch
+from dgl.nn import GNNExplainer
 from sklearn.metrics import balanced_accuracy_score, roc_auc_score, precision_recall_curve, \
     average_precision_score, f1_score, auc, recall_score, precision_score
 gpu = 0
@@ -47,7 +48,7 @@ print("load_done")
 with open("human_part_train.pkl", 'rb') as fp:
     ds = pickle.load(fp)
 
-random.shuffle(ds)
+random.Random(3).shuffle(ds)
 
 X = [i[0] for i in ds]
 y = [i[1][0] for i in ds]
@@ -96,6 +97,15 @@ optimizer = th.optim.Adam(model.parameters(), lr=1e-3)
 criterion = th.nn.BCELoss()
 scheduler = ExponentialLR(optimizer, gamma=0.90)
 
+X = X[0:20]
+y = y[0:20]
+
+X_test = X_test[0:5]
+y_test = y_test[0:5]
+
+X_val = X_val[0:5]
+y_val = y_val[0:5]
+
 print("init done")
 
 
@@ -106,10 +116,16 @@ def fwd_pass(X, y, train=False):
 
     for item in X:
         x = [0, 0]
-        x[0] = item[0].to(device)
-        x[1] = item[1].to(device)
-        out.append(model(x))
-        del x
+        try:
+            x[0] = item[0].to(device)
+            x[1] = item[1].to(device)
+            out.append(model(x))
+            del x
+        except:
+            x[0] = item[0][0].to(device)
+            x[1] = item[1].to(device)
+            out.append(model(x))
+            del x
 
     out = th.stack(out, 0).view(-1, 1).to(device)
 
@@ -126,6 +142,16 @@ def fwd_pass(X, y, train=False):
 
     return acc, loss, out
 
+# model = Model(features.shape[1], data.num_classes)
+# criterion = nn.CrossEntropyLoss()
+# optimizer = torch.optim.Adam(model.parameters(), lr=1e-2)
+# for epoch in range(10):
+#     logits = model(g, features)
+#     loss = criterion(logits[train_mask], labels[train_mask])
+#     optimizer.zero_grad()
+#     loss.backward()
+#     optimizer.step()
+
 
 def test_func(model_f, y_label, X_test_f):
     y_pred = []
@@ -136,9 +162,15 @@ def test_func(model_f, y_label, X_test_f):
         for i in tepoch:
             with th.no_grad():
                 x = [0, 0]
-                x[0] = X_test_f[i][0].to(device)
-                x[1] = X_test_f[i][1].to(device)
-                y_pred.append(model_f(x).cpu())
+                try:
+                    x[0] = X_test_f[i][0].to(device)
+                    x[1] = X_test_f[i][1].to(device)
+                    y_pred.append(model_f(x).cpu())
+                except:
+                    x[0] = X_test_f[i][0][0].to(device)
+                    x[1] = X_test_f[i][1].to(device)
+                    y_pred.append(model_f(x).cpu())
+                    continue
 
     y_pred = th.cat(y_pred, dim=0)
     y_pred_c = [round(i.item()) for i in y_pred]
@@ -160,7 +192,7 @@ def test_func(model_f, y_label, X_test_f):
 
 
 def train(net):
-    EPOCHS = 100
+    EPOCHS = 1
     BATCH_SIZE = 80
 
     with open("model.log", "a") as f:
@@ -207,3 +239,8 @@ def train(net):
 
 train(model)
 test_func(model, y_test, X_test)
+
+explainer = GNNExplainer(model, num_hops=1)
+new_center, sg, feat_mask, edge_mask = explainer.explain_graph(X[0][1], X[0][1].ndata['h'])
+print(new_center)
+print(sg.num_edges())
