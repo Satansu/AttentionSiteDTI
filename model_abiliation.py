@@ -65,20 +65,20 @@ class DTIModelWithoutBatching(nn.Module):
 
     #    return attn_weight_matrix
 
-    def forward(self, g):
-        feature_protein = g[0].ndata['h']
-        feature_smile = g[1].ndata['h']
+    def forward(self, graph):
+        feature_protein = graph[0].ndata['h']
+        feature_smile = graph[1].ndata['h']
 
         for module in self.protein_graph_conv:
-            feature_protein = F.relu(module(g[0], feature_protein))
+            feature_protein = F.relu(module(graph[0], feature_protein))
 
         for module in self.ligand_graph_conv:
-            feature_smile = F.relu(module(g[1], feature_smile))
+            feature_smile = F.relu(module(graph[1], feature_smile))
 
         pool_ligand = GlobalAttentionPooling(self.pooling_ligand)
         pool_protein = GlobalAttentionPooling(self.pooling_protein)
-        protein_rep = pool_protein(g[0], feature_protein).view(-1, 31)
-        ligand_rep = pool_ligand(g[1], feature_smile).view(-1, 31)
+        protein_rep = pool_protein(graph[0], feature_protein).view(-1, 31)
+        ligand_rep = pool_ligand(graph[1], feature_smile).view(-1, 31)
         #sequence = []
         #for item in protein_rep:
         #    sequence.append(item.view(1, 31))
@@ -155,20 +155,20 @@ class DTITAG(nn.Module):
 
     #    return attn_weight_matrix
 
-    def forward(self, g):
-        feature_protein = g[0].ndata['h']
-        feature_smile = g[1].ndata['h']
+    def forward(self, graph):
+        feature_protein = graph[0].ndata['h']
+        feature_smile = graph[1].ndata['h']
 
         for module in self.protein_graph_conv:
-            feature_protein = F.relu(module(g[0], feature_protein))
+            feature_protein = F.relu(module(graph[0], feature_protein))
 
         for module in self.ligand_graph_conv:
-            feature_smile = F.relu(module(g[1], feature_smile))
+            feature_smile = F.relu(module(graph[1], feature_smile))
 
         pool_ligand = GlobalAttentionPooling(self.pooling_ligand)
         pool_protein = GlobalAttentionPooling(self.pooling_protein)
-        protein_rep = pool_protein(g[0], feature_protein).view(-1, 31)
-        ligand_rep = pool_ligand(g[1], feature_smile).view(-1, 31)
+        protein_rep = pool_protein(graph[0], feature_protein).view(-1, 31)
+        ligand_rep = pool_ligand(graph[1], feature_smile).view(-1, 31)
         #sequence = []
         #for item in protein_rep:
         #    sequence.append(item.view(1, 31))
