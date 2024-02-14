@@ -1,3 +1,5 @@
+# (I am working on a research paper with this paper as one of the main references and hence am documenting my edits and changes here)
+
 # AttentionSiteDTI
 [![PWC](https://img.shields.io/endpoint.svg?url=https://paperswithcode.com/badge/attentionsitedti-an-interpretable-graph-based/drug-discovery-on-bindingdb)](https://paperswithcode.com/sota/drug-discovery-on-bindingdb?p=attentionsitedti-an-interpretable-graph-based)
 
